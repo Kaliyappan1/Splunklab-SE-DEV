@@ -1,0 +1,6 @@
+---
+splunk_instance:
+  name: splunk-instance-01
+  private_ip: 172.31.28.30
+  instance_id: i-0697e8c31df8ae397
+  splunk_admin_password: admin123
