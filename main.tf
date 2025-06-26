@@ -32,7 +32,7 @@ terraform {
 }
 
 provider "aws" {
-  region     = var.aws_region
+  region = var.aws_region
 }
 
 # Check if key already exists using external script
@@ -52,18 +52,19 @@ locals {
   final_key_name = local.key_exists ? "${var.key_name}-${random_integer.suffix.result}" : var.key_name
 }
 
+# Generate PEM key
 resource "tls_private_key" "generated_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-
+# Create EC2 Key Pair
 resource "aws_key_pair" "generated_key_pair" {
   key_name   = local.final_key_name
   public_key = tls_private_key.generated_key.public_key_openssh
 }
 
-
+# Save PEM key locally
 resource "null_resource" "save_key_file" {
   provisioner "local-exec" {
     command = <<EOT
@@ -76,6 +77,16 @@ EOT
   triggers = {
     always_run = "${timestamp()}"
   }
+}
+
+# Upload PEM key to S3 inside user email folder
+resource "aws_s3_object" "upload_pem_key" {
+  bucket = "splunk-deployment-test"
+  key    = "${var.usermail}/keys/${local.final_key_name}.pem"
+  source = "${path.cwd}/keys/${local.final_key_name}.pem"
+  etag   = filemd5("${path.cwd}/keys/${local.final_key_name}.pem")
+
+  depends_on = [null_resource.save_key_file]
 }
 
 # Security group random name suffix
@@ -141,6 +152,10 @@ resource "aws_instance" "splunk_server" {
   key_name               = aws_key_pair.generated_key_pair.key_name
   vpc_security_group_ids = [aws_security_group.splunk_sg.id]
 
+  instance_market_options {
+    market_type = var.market_type
+  }
+
   root_block_device {
     volume_size = var.storage_size
   }
@@ -166,4 +181,8 @@ output "final_key_name" {
 
 output "key_file_path" {
   value = "${path.cwd}/keys/${local.final_key_name}.pem"
+}
+
+output "s3_key_path" {
+  value = "${var.usermail}/keys/${local.final_key_name}.pem"
 }

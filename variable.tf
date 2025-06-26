@@ -52,3 +52,8 @@ variable "ssh_public_key" {
   description = "SSH public key content"
   type        = string
 }
+
+variable "market_type" {
+  type    = string
+  default = "on-demand"
+}
