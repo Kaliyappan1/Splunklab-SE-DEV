@@ -48,6 +48,16 @@ variable "category" {
   type        = string
 }
 
+variable "hoursperday" {
+  description = "Instance hoursperday"
+  type        = string
+}
+
+variable "planstartdate" {
+  description = "Instance planstartdate"
+  type        = string
+}
+
 variable "ssh_public_key" {
   description = "SSH public key content"
   type        = string

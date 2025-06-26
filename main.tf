@@ -4,8 +4,31 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 4.16"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.0"
+    }
   }
   required_version = ">= 1.2.0"
+
+  backend "s3" {
+    bucket         = "splunk-deployment-test"
+    key            = "splunk/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
@@ -16,7 +39,7 @@ provider "aws" {
 
 # Check if key already exists using external script
 data "external" "key_check" {
-  program = ["${path.cwd}/scripts/check_key.sh", var.key_name]
+  program = ["${path.cwd}/scripts/check_key.sh", var.key_name, var.aws_region]
 }
 
 # Random 2-digit number generator
@@ -31,22 +54,22 @@ locals {
   final_key_name = local.key_exists ? "${var.key_name}-${random_integer.suffix.result}" : var.key_name
 }
 
-# Create new TLS key
 resource "tls_private_key" "generated_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-# Create AWS key pair
+
 resource "aws_key_pair" "generated_key_pair" {
   key_name   = local.final_key_name
   public_key = tls_private_key.generated_key.public_key_openssh
 }
 
-# Save private key to local 'keys' folder
+
 resource "null_resource" "save_key_file" {
   provisioner "local-exec" {
     command = <<EOT
+mkdir -p keys
 printf "%s" '${tls_private_key.generated_key.private_key_pem}' > keys/${local.final_key_name}.pem
 chmod 400 keys/${local.final_key_name}.pem
 EOT
@@ -132,20 +155,9 @@ resource "aws_instance" "splunk_server" {
     Owner         = var.usermail
     UserEmail     = var.usermail
     RunQuotaHours = var.quotahours
+    HoursPerDay   = var.hoursperday
     Category      = var.category
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = tls_private_key.generated_key.private_key_pem
-      host        = self.public_ip
-    }
-
-    inline = [
-      "echo '${var.ssh_public_key}' >> ~/.ssh/authorized_keys"
-    ]
+    PlanStartDate = var.planstartdate
   }
 }
 
@@ -155,7 +167,7 @@ resource "local_file" "ansible_inventory" {
 
   content = <<EOF
 [splunk]
-${var.instance_name} ansible_host=${aws_instance.splunk_server.public_ip} ansible_user=ec2-user
+${var.instance_name} ansible_host=${aws_instance.splunk_server.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=${path.cwd}/keys/${local.final_key_name}.pem
 EOF
 }
 
