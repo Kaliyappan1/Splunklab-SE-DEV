@@ -15,8 +15,11 @@ phases:
       - pip install --upgrade pip
       - pip install ansible
       - yum install -y unzip wget
-      - curl -fsSL https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo -o /etc/yum.repos.d/hashicorp.repo
-      - yum install -y terraform
+      # Directly download terraform binary
+      - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip
+      - unzip terraform.zip
+      - mv terraform /usr/local/bin/
+      - terraform --version
   pre_build:
     commands:
       - echo "Pre-build phase complete."
