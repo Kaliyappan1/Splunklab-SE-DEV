@@ -1,6 +1,4 @@
 key_name       = "kaliyappan-100"
-aws_access_key = "aws_access_key"
-aws_secret_key = "aws_secret_key"
 
 instance_type   = "t3.medium"
 aws_region      = "us-east-1"
