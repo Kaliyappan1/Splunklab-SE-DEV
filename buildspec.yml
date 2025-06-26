@@ -5,33 +5,21 @@ phases:
     runtime-versions:
       python: 3.8
     commands:
-      - mkdir -p /root/cache
-      - if [ ! -f /root/cache/terraform ]; then
-          curl -O https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip &&
-          unzip terraform_1.7.5_linux_amd64.zip &&
-          mv terraform /root/cache/terraform;
-        fi
-      - cp /root/cache/terraform /usr/local/bin/terraform
-      - terraform --version
-      - yum install -y python3-pip
-      - pip3 install ansible
-      - ansible --version
+      - pip install --upgrade pip
+      - pip install ansible
+      - yum install -y unzip wget
+      - curl -fsSL https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo -o /etc/yum.repos.d/hashicorp.repo
+      - yum install -y terraform
   pre_build:
     commands:
       - echo "Pre-build phase complete."
   build:
     commands:
-    build:
-    commands:
       - chmod +x scripts/check_key.sh
       - terraform init
       - terraform apply -auto-approve
+      - chmod 600 key/*.pem
       - ansible-playbook -i hosts splunk_setup.yml --ssh-common-args='-o StrictHostKeyChecking=no'
-
-cache:
-  paths:
-    - /root/cache/**/*
-
-artifacts:
-  files:
-    - '**/*'
+  post_build:
+    commands:
+      - echo "Deployment Completed Successfully!"
