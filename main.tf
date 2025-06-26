@@ -152,10 +152,6 @@ resource "aws_instance" "splunk_server" {
   key_name               = aws_key_pair.generated_key_pair.key_name
   vpc_security_group_ids = [aws_security_group.splunk_sg.id]
 
-  instance_market_options {
-    market_type = var.market_type
-  }
-
   root_block_device {
     volume_size = var.storage_size
   }
