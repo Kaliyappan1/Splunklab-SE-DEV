@@ -159,30 +159,6 @@ resource "aws_instance" "splunk_server" {
   }
 }
 
-# Ansible inventory file
-resource "local_file" "ansible_inventory" {
-  filename = "inventory.ini"
-
-  content = <<EOF
-[splunk]
-${var.instance_name} ansible_host=${aws_instance.splunk_server.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=${path.cwd}/keys/${local.final_key_name}.pem
-EOF
-}
-
-# Ansible group vars file
-resource "local_file" "ansible_group_vars" {
-  filename = "group_vars/all.yml"
-
-  content = <<EOF
----
-splunk_instance:
-  name: ${var.instance_name}
-  private_ip: ${aws_instance.splunk_server.private_ip}
-  instance_id: ${aws_instance.splunk_server.id}
-  splunk_admin_password: admin123
-EOF
-}
-
 # Outputs
 output "final_key_name" {
   value = local.final_key_name
