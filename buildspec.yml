@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - yum install -y unzip wget
+      - yum install -y terraform ansible
+  pre_build:
+    commands:
+      - terraform --version
+      - ansible --version
+  build:
+    commands:
+      - terraform init
+      - terraform apply -auto-approve
+      - ansible-playbook -i hosts splunk_setup.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+artifacts:
+  files:
+    - '**/*'
