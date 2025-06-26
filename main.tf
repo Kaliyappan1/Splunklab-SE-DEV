@@ -49,7 +49,8 @@ resource "random_integer" "suffix" {
 # Dynamic key name selection
 locals {
   key_exists     = data.external.key_check.result.exists == "true"
-  final_key_name = local.key_exists ? "${var.key_name}-${random_integer.suffix.result}" : var.key_name
+  suffix         = local.key_exists ? data.external.key_check.result.next_suffix : ""
+  final_key_name = "${var.key_name}${local.suffix}"
 }
 
 # Generate PEM key
@@ -75,19 +76,42 @@ EOT
   }
 
   triggers = {
-    always_run = "${timestamp()}"
+    key_name   = local.final_key_name
+    user_email = var.usermail
+    always_run = timestamp()
   }
 }
 
-# Upload PEM key to S3 inside user email folder
+resource "null_resource" "wait_for_file" {
+  depends_on = [null_resource.save_key_file]
+
+  provisioner "local-exec" {
+    command = <<EOT
+i=0
+while [ ! -f "keys/${local.final_key_name}.pem" ] && [ $i -lt 10 ]; do
+  echo "Waiting for PEM file to be written..."
+  sleep 1
+  i=$((i+1))
+done
+
+if [ ! -f "keys/${local.final_key_name}.pem" ]; then
+  echo "Error: PEM file not found!"
+  exit 1
+fi
+EOT
+    interpreter = ["bash", "-c"]
+  }
+}
+
+
 resource "aws_s3_object" "upload_pem_key" {
+  depends_on = [null_resource.wait_for_file]
+
   bucket = "splunk-deployment-test"
   key    = "${var.usermail}/keys/${local.final_key_name}.pem"
   source = "${path.cwd}/keys/${local.final_key_name}.pem"
-  etag   = filemd5("${path.cwd}/keys/${local.final_key_name}.pem")
-
-  depends_on = [null_resource.save_key_file]
 }
+
 
 # Security group random name suffix
 resource "random_id" "sg_suffix" {
