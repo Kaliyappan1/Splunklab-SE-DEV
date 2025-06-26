@@ -21,9 +21,13 @@ phases:
       - echo "Pre-build phase complete."
   build:
     commands:
+    build:
+    commands:
+      - chmod +x scripts/check_key.sh
       - terraform init
       - terraform apply -auto-approve
       - ansible-playbook -i hosts splunk_setup.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+
 cache:
   paths:
     - /root/cache/**/*
