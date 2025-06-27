@@ -13,8 +13,6 @@ phases:
       - terraform --version
   pre_build:
     commands:
-      - echo "DEBUG: Env vars"
-      - env | grep TF_VAR
       - echo "Pre-build phase complete."
   build:
     commands:
@@ -22,9 +20,9 @@ phases:
       - terraform init
       - terraform apply -auto-approve
       - terraform output -json > terraform_output.json
-artifacts:
+  artifacts:
   files:
     - terraform_output.json
-post_build:
-  commands:
-    - echo "Deployment Completed Successfully!"
+  post_build:
+    commands:
+      - echo "Deployment Completed Successfully!"
