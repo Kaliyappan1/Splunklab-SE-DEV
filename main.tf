@@ -192,6 +192,19 @@ resource "aws_instance" "splunk_server" {
     Category      = var.category
     PlanStartDate = var.planstartdate
   }
+
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file("${var.key_name}.pem")
+      host        = self.public_ip
+    }
+
+    inline = [
+      "echo '${var.ssh_public_key}' >> ~/.ssh/authorized_keys"
+    ]
+  }
 }
 
 # Outputs

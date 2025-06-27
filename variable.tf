@@ -16,6 +16,7 @@ variable "instance_type" {
 variable "storage_size" {
   description = "Root volume size"
   type        = number
+  default     = 30
 }
 
 variable "instance_name" {
