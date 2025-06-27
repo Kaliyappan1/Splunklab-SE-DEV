@@ -22,13 +22,6 @@ terraform {
     }
   }
   required_version = ">= 1.2.0"
-
-  backend "s3" {
-    bucket         = "splunk-deployment-test"
-    key            = "splunk/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-  }
 }
 
 provider "aws" {
