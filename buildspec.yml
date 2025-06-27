@@ -19,10 +19,6 @@ phases:
       - chmod +x scripts/check_key.sh
       - terraform init
       - terraform apply -auto-approve
-      - terraform output -json > terraform_output.json
-  artifacts:
-  files:
-    - terraform_output.json
   post_build:
     commands:
       - echo "Deployment Completed Successfully!"
