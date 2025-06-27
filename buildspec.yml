@@ -13,6 +13,8 @@ phases:
       - terraform --version
   pre_build:
     commands:
+      - echo "DEBUG: Env vars"
+      - env | grep TF_VAR
       - echo "Pre-build phase complete."
   build:
     commands:
